@@ -6,7 +6,9 @@ import animator as am
 from animation_functions import *
 from animation_classes import known_weathers
 from ocean import begin_ocean, update_ocean_slices
-from CLIRender.classes import Canvas
+# from CLIRender.classes import Canvas
+from pygame_canvas import PygameCanvas as Canvas
+
 
 canvas = Canvas(Vector2(40, 24), 1, ())
 

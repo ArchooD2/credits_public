@@ -1,5 +1,6 @@
 from animation_functions import debug_info
-from CLIRender.classes import enable_ansi
+import pygame
+pygame.init()
 from colorama import Fore, Style
 
 import keyboard
@@ -12,8 +13,6 @@ from animation_scenes import all_scenes, canvas
 from string_defs import data_strings
 
 import animator as am
-
-enable_ansi()
 # canvas.render_blank()
 delay = 60.0 / 179.0 / 8.0
 beat = -60
@@ -408,15 +407,10 @@ last_update = time.time()
 prev_pos = 0
 
 while playback.active:
-    # (17.06.21) might have broken, i used a -1 beat offset here to try and sync up everything better
-    # since i originally used 1-indexed beats
-    #
-    # (24.06.21) update chat it didnt break
+    pygame.event.pump()  # Keeps window responsive (VERY IMPORTANT in fullscreen)
 
-    # next_beat = (time.time() - time_start - offset) > ((beat - 1) * delay)
     next_beat = (playback.curr_pos - offset) > ((beat - 1) * delay)
     need_update = time.time() - (1 / 30) > last_update
-    # print(pygame.mixer.music.get_pos())
 
     if next_beat:
         controller.request_next()
@@ -428,39 +422,45 @@ while playback.active:
         beat += 1
 
     if need_update:
-        if keyboard.is_pressed("p"):
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_p]:
             if not paused_this_frame:
                 if playback.paused:
                     playback.resume()
                 else:
                     playback.pause()
-
                 paused_this_frame = True
         else:
             paused_this_frame = False
 
-        if keyboard.is_pressed(","):
+        if keys[pygame.K_COMMA]:
             if not ff_this_frame:
                 ff_this_frame = True
             else:
                 playback.seek(playback.curr_pos + delay * 3)
 
-        if keyboard.is_pressed("."):
+        elif keys[pygame.K_PERIOD]:
             if not ff_this_frame:
                 ff_this_frame = True
             else:
                 playback.seek(playback.curr_pos + delay * 7)
 
-        if keyboard.is_pressed("/"):
+        elif keys[pygame.K_SLASH]:
             if not ff_this_frame:
                 ff_this_frame = True
             else:
                 playback.seek(playback.curr_pos + delay * 15)
-        # else:
-        #     # print("n", ff_this_frame, pygame.mixer.music.get_pos() + prev_pos, prev_pos)
-        #     if ff_this_frame:
-        #         # print("unpausing now")
-        #         ff_this_frame = False
-        #         ffwing.toggle_music()
+
+        else:
+            ff_this_frame = False
 
         last_update = time.time()
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT or (
+            event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE
+        ):
+            playback.stop()
+            pygame.quit()
+            exit()
