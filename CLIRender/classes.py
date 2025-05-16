@@ -33,13 +33,15 @@ class RenderSection:
         if loc == self.end:
             self.add_char(char)
         else:
-            self.string = self.string[:loc] + char + self.string[loc + 2:]
+            self.string = self.string[:loc] + char + self.string[loc + 2 :]
 
     # The addition operation adds the other section to this section. The other section takes precedence.
     # This only works with text and discards the other section's code.
     def add_section(self, other):
         diff = other.start - self.start
-        self.string = self.string[:diff] + other.string + self.string[diff + other.length:]
+        self.string = (
+            self.string[:diff] + other.string + self.string[diff + other.length :]
+        )
         self.length = len(self.string)
         self.start = min(other.start, self.start)
         self.end = self.start + self.length
@@ -48,7 +50,9 @@ class RenderSection:
     # This only works with text and discards the other section's code.
     def add_section_below(self, other):
         diff = self.start - other.start
-        self.string = other.string[:diff] + self.string + other.string[diff + self.length:]
+        self.string = (
+            other.string[:diff] + self.string + other.string[diff + self.length :]
+        )
         self.length = len(self.string)
         self.start = min(other.start, self.start)
         self.end = self.start + self.length
@@ -79,7 +83,9 @@ class RenderSection:
         if other.end < self.end:
             # if the other string ends before us, the latter part needs something too
             diff = self.end - other.end
-            last = RenderSection(self.string[self.length - diff:], other.end, self.code)
+            last = RenderSection(
+                self.string[self.length - diff :], other.end, self.code
+            )
 
         return first, last
 
@@ -96,18 +102,27 @@ class Canvas:
         self.edits_this_frame = 0
 
     def set_char(self, layer, location, char, code):
-        self.layers[layer].set_char(int(location.x * 2) + (location.y * self.dimensions.x), char, code)
+        self.layers[layer].set_char(
+            int(location.x * 2) + (location.y * self.dimensions.x), char, code
+        )
         self.edits_this_frame += 1
 
     def set_string(self, layer, location, string, code):
-        self.layers[layer].set_string(int(location.x * 2) + (location.y * self.dimensions.x), string, code)
+        self.layers[layer].set_string(
+            int(location.x * 2) + (location.y * self.dimensions.x), string, code
+        )
         self.edits_this_frame += 1
 
     def clear_layer(self, layer):
-        self.layers[layer].set_string(0, " " * self.dimensions.x * self.dimensions.y, "")
+        self.layers[layer].set_string(
+            0, " " * self.dimensions.x * self.dimensions.y, ""
+        )
 
     def render_blank(self):
-        print("\033[1;1H\033[1;37;40m" + (("  " * self.dimensions.x + "\n") * self.dimensions.y))
+        print(
+            "\033[1;1H\033[1;37;40m"
+            + (("  " * self.dimensions.x + "\n") * self.dimensions.y)
+        )
 
     def render_all(self):
         # Merge layers from bottom to top then render the resulting group list.
@@ -132,7 +147,9 @@ class Canvas:
                     break
 
                 stop = self.dimensions.x - offset + split
-                add_string += group.string[split:stop] + ("\n" if stop <= group.length else "")
+                add_string += group.string[split:stop] + (
+                    "\n" if stop <= group.length else ""
+                )
                 offset = 0
                 lineno += 1
                 split += stop - split
@@ -233,7 +250,7 @@ class Layer:
             start_i -= 1
 
         # Cut the string down to the maximum possible length it could be.
-        cut_string = string[:self.max_loc - loc]
+        cut_string = string[: self.max_loc - loc]
         add_group = RenderSection(cut_string, loc, code)
         add_groups = [None, add_group, None]
         remove = []
@@ -250,7 +267,10 @@ class Layer:
             # If it ends before our start, discard. We don't need it.
             if mid_group.end > add_group.start:
                 # If it is eclipsed, we don't need it at all.
-                if mid_group.start >= add_group.start and mid_group.end <= add_group.end:
+                if (
+                    mid_group.start >= add_group.start
+                    and mid_group.end <= add_group.end
+                ):
                     remove.append(mid_i)
                 else:
                     # Otherwise, run either subtract or add on it.

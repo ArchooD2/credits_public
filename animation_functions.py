@@ -6,73 +6,148 @@ from colorama import Fore, Style
 
 
 def generate_random_hex(length):
-    return ('%0' + str(length) + 'x') % random.randrange(16 ** length)
+    """Generates a random hexadecimal string of a given length.
+
+    Args:
+        length (int): Length of the hexadecimal string.
+
+    Returns:
+        str: Random hexadecimal string.
+    """
+    return ("%0" + str(length) + "x") % random.randrange(16**length)
 
 
 def replace_text_with_spaces(string, chance):
-    return "".join((" " if random.randint(0, 100) < chance else char) for char in string)
+    """Replaces characters in a string with spaces based on a probability.
+
+    Args:
+        string (str): The original string.
+        chance (int): Probability (0-100) that a character will be replaced by a space.
+
+    Returns:
+        str: The modified string with some characters replaced by spaces.
+    """
+
+    return "".join(
+        (" " if random.randint(0, 100) < chance else char) for char in string
+    )
 
 
 def render_weather(c, layer, x, y, weather, mutations_after=0, spc_chance=0):
-    # .                      .
+    """Renders weather information to the canvas.
+
+    Args:
+        c: Canvas renderer object.
+        layer (int): Rendering layer.
+        x (int): X coordinate.
+        y (int): Y coordinate.
+        weather: Weather object with `weather_name`, `temp`, `wind`, `wind_dir`, and `precip`.
+        mutations_after (int, optional): Number of mutations to apply after rendering.
+        spc_chance (int, optional): Chance to replace characters with spaces (0-100).
+    """
+
     if weather.precip != -1:
         c.set_string(
-            layer, Vector2(x + 5, y - 2),
+            layer,
+            Vector2(x + 5, y - 2),
             replace_text_with_spaces("{:>14}".format(weather.weather_name), spc_chance),
-            Fore.YELLOW + Style.NORMAL
+            Fore.YELLOW + Style.NORMAL,
         )
     else:
         c.set_string(
-            layer, Vector2(x, y - 2),
+            layer,
+            Vector2(x, y - 2),
             replace_text_with_spaces("{:>14}".format(weather.weather_name), spc_chance),
-            Fore.RED + Style.BRIGHT
+            Fore.RED + Style.BRIGHT,
         )
 
-    temp_colour = (Fore.WHITE, Fore.CYAN, Fore.YELLOW, Fore.RED)[min(3, int(weather.temp) // 23)]
+    temp_colour = (Fore.WHITE, Fore.CYAN, Fore.YELLOW, Fore.RED)[
+        min(3, int(weather.temp) // 23)
+    ]
     c.set_string(
-        layer, Vector2(x, y),
+        layer,
+        Vector2(x, y),
         replace_text_with_spaces("{:2}°F  ".format(int(weather.temp)), spc_chance),
-        temp_colour + Style.BRIGHT
+        temp_colour + Style.BRIGHT,
     )
 
     wind_dirs = ("N ", "NE", "E ", "SE", "S ", "SW", "W ", "NW")
     c.set_string(
-        layer, Vector2(x + 5, y),
-        replace_text_with_spaces("Wind {:2} mph {}".format(int(weather.wind), wind_dirs[weather.wind_dir]), spc_chance),
-        Fore.CYAN + Style.BRIGHT
+        layer,
+        Vector2(x + 5, y),
+        replace_text_with_spaces(
+            "Wind {:2} mph {}".format(int(weather.wind), wind_dirs[weather.wind_dir]),
+            spc_chance,
+        ),
+        Fore.CYAN + Style.BRIGHT,
     )
 
     c.set_string(
-        layer, Vector2(x + 5, y + 2),
+        layer,
+        Vector2(x + 5, y + 2),
         replace_text_with_spaces("Precipitation ", spc_chance),
-        Fore.BLUE + Style.BRIGHT
+        Fore.BLUE + Style.BRIGHT,
     )
 
     c.set_string(
-        layer, Vector2(x + 5, y + 3),
-        replace_text_with_spaces("{:^13} ".format(str(round(weather.precip * 100, 2)) + "%"), spc_chance),
-        Fore.BLUE + Style.BRIGHT
+        layer,
+        Vector2(x + 5, y + 3),
+        replace_text_with_spaces(
+            "{:^13} ".format(str(round(weather.precip * 100, 2)) + "%"), spc_chance
+        ),
+        Fore.BLUE + Style.BRIGHT,
     )
 
     weather.mutate(mutations_after)
 
 
 def noise(c, layer, amount, chars, colours):
+    """Renders visual noise on the canvas.
+
+    Args:
+        c: Canvas renderer object.
+        layer (int): Rendering layer.
+        amount (int): Number of noise characters to render.
+        chars (List[str]): Characters to use as noise.
+        colours (List[str]): Colorama color codes for noise characters.
+    """
+
     for n in range(amount):
-        location = Vector2(random.randint(0, c.dimensions.x - 1), random.randint(0, c.dimensions.y - 1))
-        c.set_char(
-            layer, location, random.choice(chars), random.choice(colours)
+        location = Vector2(
+            random.randint(0, c.dimensions.x - 1), random.randint(0, c.dimensions.y - 1)
         )
+        c.set_char(layer, location, random.choice(chars), random.choice(colours))
 
 
 def set_multiline_string(c, layer, x, y, string, col):
+    """Writes a multiline string to the canvas line-by-line.
+
+    Args:
+        c: Canvas renderer object.
+        layer (int): Rendering layer.
+        x (int): Starting X position.
+        y (int): Starting Y position.
+        string (str): Multiline string to render.
+        col (str): Colorama color code.
+    """
+
     for offset, line in enumerate(string.split("\n")):
-        c.set_string(
-            layer, Vector2(x, y + offset), line, col
-        ),
+        c.set_string(layer, Vector2(x, y + offset), line, col),
 
 
 def type_text(c, generator, layer, x, y, col, render=True):
+    """Types out text one character at a time with optional clearing and cursor simulation.
+
+    Args:
+        c: Canvas renderer object.
+        generator: Generator object containing text data.
+        layer (int): Rendering layer.
+        x (int): X position.
+        y (int): Y position.
+        col (str): Colorama color code.
+        render (bool, optional): Whether to render output. Defaults to True.
+    """
+
     # pop a char off the manager's text if there is one
     text_get = generator.get_data("text")
     offset = generator.get_data("offset")
@@ -85,9 +160,7 @@ def type_text(c, generator, layer, x, y, col, render=True):
                 location = Vector2(x, y + yclear)
 
                 if render:
-                    c.set_string(
-                        layer, location, " " * int(clear_bounds[0]), col
-                    )
+                    c.set_string(layer, location, " " * int(clear_bounds[0]), col)
         else:
             for linecount, text_line in enumerate(text_get.split("\n")):
                 local_offset = offset - total_chars
@@ -102,18 +175,25 @@ def type_text(c, generator, layer, x, y, col, render=True):
                     location = Vector2(x, y + linecount)
 
                     if render:
-                        c.set_string(
-                            layer, location, string, col
-                        )
+                        c.set_string(layer, location, string, col)
 
             generator.oper_data("offset", lambda t: t + 1 + add_offset)
 
 
 def fuck_up_text(string, chance, also_ignore=""):
+    """Randomly corrupts a string based on a chance value.
+
+    Args:
+        string (str): Input string.
+        chance (int): Probability per character to corrupt.
+        also_ignore (str, optional): Characters to exclude from corruption.
+
+    Returns:
+        str: The corrupted string.
+    """
+
     new_str = ""
-    fucks = (
-        ".", ".", ".", " ", " ", "`", "=", "/", "?", "-", "$", "%"
-    )
+    fucks = (".", ".", ".", " ", " ", "`", "=", "/", "?", "-", "$", "%")
     for char in string:
         if char == "\n":
             new_str += char
@@ -127,15 +207,39 @@ def fuck_up_text(string, chance, also_ignore=""):
 
 
 def debug_info(c, g, b, frames):
+    """Renders debug information to the canvas.
+
+    Displays current beat info, active scenes, edit count, FPS estimate, and a color palette.
+
+    Args:
+        c: Canvas renderer object.
+        g: Generator object with access to the SceneManager.
+        b (int): Current beat value.
+        frames (List[float]): Timestamps of recent frames for FPS calculation.
+    """
+
     c.set_string(
-        0, Vector2(32, 1), "{:4} g | {:4} l".format(g.parent.cur_beat, g.parent.active_scene[0].internal_beat), Style.BRIGHT + Fore.YELLOW
+        0,
+        Vector2(32, 1),
+        "{:4} g | {:4} l".format(
+            g.parent.cur_beat, g.parent.active_scene[0].internal_beat
+        ),
+        Style.BRIGHT + Fore.YELLOW,
     ),
     counted_scenes = 0
-    for index, scene in enumerate(filter(lambda s: s.name != "debug_counter", g.parent.active_scene)):
+    for index, scene in enumerate(
+        filter(lambda s: s.name != "debug_counter", g.parent.active_scene)
+    ):
         c.set_string(
-            0, Vector2(32, index + 2), "{:^17}".format(
-                scene.name + " ({})".format(len(list(filter(lambda g: g.start_beat <= b, scene.generators))))
-            ), Style.NORMAL + Fore.GREEN
+            0,
+            Vector2(32, index + 2),
+            "{:^17}".format(
+                scene.name
+                + " ({})".format(
+                    len(list(filter(lambda g: g.start_beat <= b, scene.generators)))
+                )
+            ),
+            Style.NORMAL + Fore.GREEN,
         ),
 
         counted_scenes += 1
@@ -146,17 +250,25 @@ def debug_info(c, g, b, frames):
         ),
 
     c.set_string(
-        0, Vector2(32, 8), "  {:4} e/s".format(c.edits_this_frame), Style.BRIGHT + Fore.YELLOW
+        0,
+        Vector2(32, 8),
+        "  {:4} e/s".format(c.edits_this_frame),
+        Style.BRIGHT + Fore.YELLOW,
     ),
 
-    avg_differences = sum(frames[i] - frames[i - 1] for i in range(len(frames) - 1, 0, -1))
+    avg_differences = sum(
+        frames[i] - frames[i - 1] for i in range(len(frames) - 1, 0, -1)
+    )
     if avg_differences:
         avg_differences /= 10
     else:
         avg_differences = 60
 
     c.set_string(
-        0, Vector2(32, 9), " {:6} fps".format(round(1 / avg_differences, 1)), Style.BRIGHT + Fore.YELLOW
+        0,
+        Vector2(32, 9),
+        " {:6} fps".format(round(1 / avg_differences, 1)),
+        Style.BRIGHT + Fore.YELLOW,
     ),
 
     cols = (
@@ -170,37 +282,64 @@ def debug_info(c, g, b, frames):
         Fore.WHITE,
     )
 
-    styles = (
-        Style.NORMAL,
-        Style.BRIGHT
-    )
+    styles = (Style.NORMAL, Style.BRIGHT)
     for index in range(16):
         c.set_char(
-            0, Vector2(32 + (index % 8), 11 + (index // 8)), "##", cols[index % 8] + styles[index // 8]
+            0,
+            Vector2(32 + (index % 8), 11 + (index // 8)),
+            "##",
+            cols[index % 8] + styles[index // 8],
         ),
 
 
 def clear(c, layer):
+    """Clears a specific canvas layer.
+
+    Args:
+        c: Canvas renderer object.
+        layer (int): Layer to clear.
+    """
+
     c.clear_layer(layer)
 
 
 def beat_toggle(c, g, layer, x, x2, y, y2, char, col):
+    """Toggles between two visual states on the canvas.
+
+    Args:
+        c: Canvas renderer object.
+        g: Generator storing toggle state.
+        layer (int): Layer to draw on.
+        x (int): Starting x position.
+        x2 (int): Ending x position.
+        y (int): Starting y position.
+        y2 (int): Ending y position.
+        char (str): Character to toggle.
+        col (str): Color to render with.
+    """
+
     tog = g.get_data("beat_toggle")
     chars = char if tog else ".."
     x_diff = x2 - x
     for yn in range(y, y2):
-        c.set_string(
-            layer, Vector2(x, yn), chars * x_diff, col
-        ),
+        c.set_string(layer, Vector2(x, yn), chars * x_diff, col),
 
     g.set_data("beat_toggle", not tog)
 
 
 def work_out_date(b, day_offset=0):
+    """Calculates a date string based on beat count and day offset.
+
+    Args:
+        b (int): Current beat.
+        day_offset (int, optional): Additional days to offset.
+
+    Returns:
+        str: Formatted date string in "dd.mm.yyyy" format.
+    """
+
     # "22.10.2009"
-    lengths = (
-        31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
-    )
+    lengths = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 
     # One day passes every 64 beats.
     days_needed = (b // 64) + day_offset
@@ -209,7 +348,7 @@ def work_out_date(b, day_offset=0):
     day_loc = 22
     year = 2009
     while days_needed > 0:
-        leap_year = (1 if year % 4 == 0 and month_loc == 1 else 0)  # leap year
+        leap_year = 1 if year % 4 == 0 and month_loc == 1 else 0  # leap year
         until_end_month = lengths[month_loc] + 1 - day_loc + leap_year
         day_loc += min(days_needed, until_end_month)
         days_needed -= min(days_needed, until_end_month)
@@ -225,10 +364,31 @@ def work_out_date(b, day_offset=0):
 
 
 def split_word_template(string):
+    """Splits a template string into word sequences.
+
+    Returns:
+        List[List[str]]: Lines split into word groups using '#' delimiter.
+    """
+
     return [sp.split("#") for sp in string.split("\n")]
 
 
-def typewrite_by_word(c, generator, layer, x, y, col, render=True, history_var="history"):
+def typewrite_by_word(
+    c, generator, layer, x, y, col, render=True, history_var="history"
+):
+    """Types out text one word at a time, line by line, managing display history.
+
+    Args:
+        c: Canvas renderer object.
+        generator: Generator object with 'text', 'offset', and 'lineno' data.
+        layer (int): Rendering layer.
+        x (int): X position.
+        y (int): Y position.
+        col (str): Text color.
+        render (bool, optional): Whether to render output. Defaults to True.
+        history_var (str, optional): Data key for history tracking.
+    """
+
     # Show the text up to offset words at line lineno
     text_get = generator.get_data("text")
     offset = generator.get_data("offset")
@@ -244,9 +404,7 @@ def typewrite_by_word(c, generator, layer, x, y, col, render=True, history_var="
                     location = Vector2(x, y)
 
                     if render:
-                        c.set_string(
-                            layer, location, " " * int(clear_bounds), col
-                        )
+                        c.set_string(layer, location, " " * int(clear_bounds), col)
                 else:
                     # print line_total and increment offset by 1.
                     # if offset is > lineno, reset offset and increment lineno
@@ -257,9 +415,7 @@ def typewrite_by_word(c, generator, layer, x, y, col, render=True, history_var="
                                 layer, Vector2(x, y), line_total.replace("~", ""), col
                             ),
                         else:
-                            c.set_string(
-                                layer, Vector2(x, y), " " * 60, col
-                            ),
+                            c.set_string(layer, Vector2(x, y), " " * 60, col),
 
                     if offset >= len(line_get):
                         history = generator.parent.get_data(history_var)
@@ -275,14 +431,20 @@ def typewrite_by_word(c, generator, layer, x, y, col, render=True, history_var="
                             colour_select = Fore.GREEN + Style.NORMAL
 
                         if not history:
-                            history = [(
-                                prefix + line_total.strip(" ").replace("~", ""), colour_select
-                            )]
+                            history = [
+                                (
+                                    prefix + line_total.strip(" ").replace("~", ""),
+                                    colour_select,
+                                )
+                            ]
                             generator.parent.set_data(history_var, history)
                         else:
-                            history.append((
-                                prefix + line_total.strip(" ").replace("~", ""), colour_select
-                            ))
+                            history.append(
+                                (
+                                    prefix + line_total.strip(" ").replace("~", ""),
+                                    colour_select,
+                                )
+                            )
 
                         generator.parent.set_data("refresh", True)
 
@@ -296,6 +458,19 @@ def typewrite_by_word(c, generator, layer, x, y, col, render=True, history_var="
 
 
 def write_history(c, generator, layer, x, y, col, stop, var="history"):
+    """Renders a history log upwards from a specified position.
+
+    Args:
+        c: Canvas renderer object.
+        generator: Generator with history and refresh flags.
+        layer (int): Canvas layer.
+        x (int): X position.
+        y (int): Starting Y position.
+        col (str): Text color.
+        stop (int): Ending Y position.
+        var (str, optional): Data key for history log.
+    """
+
     # Write history from y position going upwards until 0
     history = generator.parent.get_data(var)
     need_refresh = generator.parent.get_data("refresh")
@@ -306,14 +481,16 @@ def write_history(c, generator, layer, x, y, col, stop, var="history"):
         if history:
             lineid = 0
             for ypos in range(y, stop - 1, -1):
-                line = history[len(history) - 1 - lineid] if lineid < len(history) else ("", Fore.BLACK + Style.BRIGHT)
+                line = (
+                    history[len(history) - 1 - lineid]
+                    if lineid < len(history)
+                    else ("", Fore.BLACK + Style.BRIGHT)
+                )
                 lineid += 1
 
                 location = Vector2(x, ypos)
 
-                c.set_string(
-                    layer, location, "{:50}".format(line[0]), line[1]
-                ),
+                c.set_string(layer, location, "{:50}".format(line[0]), line[1]),
         else:
             for ypos in range(y, stop - 1, -1):
                 c.set_string(
@@ -322,6 +499,16 @@ def write_history(c, generator, layer, x, y, col, stop, var="history"):
 
 
 def show_access_point_visual(c, generator, layer, x, y):
+    """Displays a pulsing visual for network access points.
+
+    Args:
+        c: Canvas renderer object.
+        generator: Generator holding 'counter' and 'block'.
+        layer (int): Rendering layer.
+        x (int): X coordinate.
+        y (int): Y coordinate.
+    """
+
     # Increment counter. If counter > 8, reset it, increment the bigger counter
     counter = generator.get_data("counter")
     block_counter = generator.get_data("block")
@@ -330,23 +517,35 @@ def show_access_point_visual(c, generator, layer, x, y):
 
     if counter < 8:
         set_multiline_string(
-            c, layer, location_x, location_y,
-            "  ###  \nPBS #{:02}\nPing  {}".format(block_counter + 1, counter + 1), Fore.YELLOW + Style.NORMAL
+            c,
+            layer,
+            location_x,
+            location_y,
+            "  ###  \nPBS #{:02}\nPing  {}".format(block_counter + 1, counter + 1),
+            Fore.YELLOW + Style.NORMAL,
         )
 
         generator.oper_data("counter", lambda t: t + 1)
     else:
         set_multiline_string(
-            c, layer, location_x, location_y,
-            "  ...  \nPBS #{:02}\n-------".format(block_counter + 1), Fore.BLACK + Style.BRIGHT
+            c,
+            layer,
+            location_x,
+            location_y,
+            "  ...  \nPBS #{:02}\n-------".format(block_counter + 1),
+            Fore.BLACK + Style.BRIGHT,
         )
 
         location_x_next = 5 * ((block_counter + 1) % 6) + x
         location_y_next = 4 * ((block_counter + 1) // 6) + y
 
         set_multiline_string(
-            c, layer, location_x_next, location_y_next,
-            "  ###  \nPBS #{:02}\nPing  {}".format(block_counter + 2, 1), Fore.YELLOW + Style.NORMAL
+            c,
+            layer,
+            location_x_next,
+            location_y_next,
+            "  ###  \nPBS #{:02}\nPing  {}".format(block_counter + 2, 1),
+            Fore.YELLOW + Style.NORMAL,
         )
 
         generator.set_data("counter", 1)
@@ -354,11 +553,18 @@ def show_access_point_visual(c, generator, layer, x, y):
 
 
 def make_poweroff_bars(c, b, layer, col):
+    """Renders animated bars that shrink based on beat progression.
+
+    Args:
+        c: Canvas renderer object.
+        b (int): Current beat.
+        layer (int): Rendering layer.
+        col (str): Color of the bars.
+    """
+
     # at b=1, full screen
     # then lerp height on both ends down to 0
-    height = int(24 / (b ** 1.3))
+    height = int(24 / (b**1.3))
     location = Vector2(0, 12 - (height // 2))
 
-    c.set_string(
-        layer, location, ("##" * 40) * height, col
-    )
+    c.set_string(layer, location, ("##" * 40) * height, col)

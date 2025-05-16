@@ -4,7 +4,31 @@ import math
 
 
 class Weather:
+    """Simulates and describes weather conditions with basic evolution over time.
+
+    Attributes:
+        precip (float): Precipitation level (0.0 to 1.0), -1 for offline/null.
+        temp (float): Temperature in degrees Fahrenheit.
+        wind (float): Wind speed in miles per hour.
+        gust (float): Wind gust speed in miles per hour.
+        wind_dir (int): Wind direction encoded as an integer (0–7).
+        humidity (float): Humidity level (0.0 to 1.0).
+        weather_name (str): Descriptive name of the weather.
+        days (int): Number of days since the start of the simulation.
+    """
+
     def __init__(self, precip, temp, wind, gust, wind_dir, humidity, days=2):
+        """Initializes a Weather instance.
+
+        Args:
+            precip (float): Precipitation level (0.0 to 1.0), or -1 for null state.
+            temp (float): Temperature in Fahrenheit.
+            wind (float): Wind speed in mph.
+            gust (float): Gust speed in mph.
+            wind_dir (int): Direction index (0–7).
+            humidity (float): Humidity (0.0 to 1.0).
+            days (int, optional): Number of simulation days elapsed. Defaults to 2.
+        """
         self.precip = precip
         self.temp = temp
         self.wind = wind
@@ -15,23 +39,35 @@ class Weather:
         self.days = days
 
     def __str__(self):
-        return "{}% precipitation\n" \
-               "{}F temperature\n" \
-               "{}mph wind\n" \
-               "{}mph gust\n" \
-               "{} wind direction\n" \
-               "{}% humidity\n" \
-               "{}\n".format(
-                    round(self.precip * 100, 2),
-                    int(self.temp),
-                    int(self.wind),
-                    int(self.gust),
-                    int(self.wind_dir),
-                    round(self.humidity * 100, 2),
-                    self.weather_name
-               )
+        """Returns a string representation of the weather object.
+
+        Returns:
+            str: Multi-line summary of all key weather parameters.
+        """
+        return (
+            "{}% precipitation\n"
+            "{}F temperature\n"
+            "{}mph wind\n"
+            "{}mph gust\n"
+            "{} wind direction\n"
+            "{}% humidity\n"
+            "{}\n".format(
+                round(self.precip * 100, 2),
+                int(self.temp),
+                int(self.wind),
+                int(self.gust),
+                int(self.wind_dir),
+                round(self.humidity * 100, 2),
+                self.weather_name,
+            )
+        )
 
     def get_weather_name(self):
+        """Derives a descriptive weather label based on current metrics.
+
+        Returns:
+            str: Name representing current weather conditions (e.g., 'Rain', 'Clear').
+        """
         # Clear/Sunny <> Cloudy/Rainy
         if self.humidity > 0.5:
             # Cloudy or rainy
@@ -57,29 +93,52 @@ class Weather:
             elif self.precip > 0.2:
                 return "Sleet" if self.temp < 32 else "Drizzle"
 
-            return ("Sunny" if self.humidity < 0.1 else "Partly sunny") if self.humidity < 0.2 else "Clear"
+            return (
+                ("Sunny" if self.humidity < 0.1 else "Partly sunny")
+                if self.humidity < 0.2
+                else "Clear"
+            )
 
     def mutate(self, steps=1):
+        """Evolves the weather conditions over a specified number of time steps.
+
+        This simulates natural fluctuations in precipitation, temperature, wind,
+        humidity, and gusts, and updates the descriptive name accordingly.
+
+        Args:
+            steps (int, optional): Number of daily mutation steps to apply. Defaults to 1.
+        """
         for i in range(steps):
             # Prefer 33% precip, move wind dir by +-3 each day, gust = speed x 2.1 - 2.6
             precip_move = random.randint(-100, 100) / 400.0
-            precip_move += (random.randint(0, int(100 * abs(0.33 - self.precip))) / 200) * (-1 if 0.33 - self.precip < 0 else 1)
+            precip_move += (
+                random.randint(0, int(100 * abs(0.33 - self.precip))) / 200
+            ) * (-1 if 0.33 - self.precip < 0 else 1)
             self.precip = min(1, max(0, self.precip + precip_move))
 
             self.wind_dir = (self.wind_dir + random.randint(-3, 3)) % 8
 
             wind_move = random.randint(-100, 100) / 13
-            wind_move += (random.randint(0, int(abs(15 - self.wind))) / 3) * (-1 if 15 - self.wind < 0 else 1)
+            wind_move += (random.randint(0, int(abs(15 - self.wind))) / 3) * (
+                -1 if 15 - self.wind < 0 else 1
+            )
             self.wind = max(0, self.wind + wind_move)
 
             adjusted_days = self.days - 282
-            temp_target = 40 * (math.sin((2 * math.pi * adjusted_days) / 365 - math.pi / 3) + 1) + 20
+            temp_target = (
+                40 * (math.sin((2 * math.pi * adjusted_days) / 365 - math.pi / 3) + 1)
+                + 20
+            )
             temp_move = random.randint(-100, 100) / 20
-            temp_move += (random.randint(0, int(abs(temp_target - self.temp))) / 5) * (-1 if temp_target - self.temp < 0 else 1)
+            temp_move += (random.randint(0, int(abs(temp_target - self.temp))) / 5) * (
+                -1 if temp_target - self.temp < 0 else 1
+            )
             self.temp = max(0, self.temp + temp_move)
 
             humidity_move = random.randint(-100, 100) / 500.0
-            humidity_move += (random.randint(0, int(abs(0.2 - self.humidity))) / 200) * (-1 if 0.5 - self.humidity < 0 else 1)
+            humidity_move += (
+                random.randint(0, int(abs(0.2 - self.humidity))) / 200
+            ) * (-1 if 0.5 - self.humidity < 0 else 1)
             self.humidity = max(0, min(1, self.humidity + humidity_move))
 
             self.gust = self.wind * random.randint(210, 260) * 0.01
@@ -96,7 +155,7 @@ known_weathers = (
     Weather(0.04, 52, 12, 25, 7, 0.1),
     Weather(0.07, 48, 8, 20, 1, 0.1, 200),
     Weather(0.07, 48, 8, 20, 1, 0.1, 528 + 200),
-    Weather(-1, -1, -1, -1, -1, -1)
+    Weather(-1, -1, -1, -1, -1, -1),
 )
 
 known_weathers[4].weather_name = "Connection lost...      "

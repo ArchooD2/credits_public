@@ -48,12 +48,12 @@ class Vector2:  # to be honest this is me showing off
 
     def __neg__(self):
         return Vector2(-self.x, -self.y)
-        
+
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
-    
+
     def Magnitude(self):  # returns the magnitude of the vector2. (length of the vector)
-        return ((self.x ** 2) + (self.y ** 2)) ** (1/2) #sqrt
+        return ((self.x**2) + (self.y**2)) ** (1 / 2)  # sqrt
 
 
 class Vector3:  # to be honest this is me showing off
@@ -107,4 +107,4 @@ class Vector3:  # to be honest this is me showing off
         return self.x == other.x and self.y == other.y and self.z == other.z
 
     def Magnitude(self):  # returns the magnitude of the Vector3. (length of the vector)
-        return ((self.x ** 2) + (self.y ** 2) + (self.z ** 2)) ** (1 / 2)  # sqrt
+        return ((self.x**2) + (self.y**2) + (self.z**2)) ** (1 / 2)  # sqrt

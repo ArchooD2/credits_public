@@ -44,25 +44,21 @@ def get_ocean_slice(xr, glitch):
 def mutate_text(txt, glitch):
     for i in range(len(txt)):
         ch = txt[i]
-        if ch in "#. " and random.random() <= (0.0002 + ((ocean_time % 1200) / 1200000)) * glitch:
-            txt = txt[:i] + alphabet[math.floor(random.random() * len(alphabet))] + txt[i + 1:]
+        if (
+            ch in "#. "
+            and random.random() <= (0.0002 + ((ocean_time % 1200) / 1200000)) * glitch
+        ):
+            txt = (
+                txt[:i]
+                + alphabet[math.floor(random.random() * len(alphabet))]
+                + txt[i + 1 :]
+            )
 
     return txt
 
 
 def get_ocean_slices(x1, x2):
-    cont_list = [
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        ""
-    ]
+    cont_list = ["", "", "", "", "", "", "", "", "", ""]
 
     for xr in range(x1, x2):
         x = xr / 5
@@ -87,18 +83,18 @@ def get_ocean_slices(x1, x2):
 
 def update_ocean_slices(ocean_content, ocean_glitch):
     global ocean_time
-    
+
     # edits in place
     # get the new slice
     ocean_slice = get_ocean_slice(ocean_time, ocean_glitch)
     ocean_time += 1
-    
+
     # for every line in content, remove the first char and add the slice char
     for i in range(10):
         ocean_content[i] = ocean_content[i][1:] + ocean_slice[i]
 
     raw_txt = unpack_content_to_text(ocean_content)
-    
+
     return mutate_text(raw_txt, ocean_glitch)
 
 
