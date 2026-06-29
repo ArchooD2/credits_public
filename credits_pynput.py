@@ -393,115 +393,103 @@ def update_key_states():
 
 
 
-time_menu = time.time()
+try:
+    time_menu = time.time()
 
-while time.time() - time_menu < 2:
-    update_key_states()
-
-    if key_states["1"]:
-        break
-    elif key_states["2"]:
-        skip_beats(controller, 1000, 1081)
-        break
-    elif key_states["3"]:
-        skip_beats(controller, 1770, 1851)
-        controller.events[1849] = (
-            am.Event(1849, am.Event.layer_scene("redraw_ui")),
-        )
-        controller.events[1860] = (
-            am.Event(1860, am.Event.remove_scene("redraw_ui")),
-        )
-        break
-    elif key_states["4"]:
-        skip_beats(controller, 3040, 3133)
-        break
-    elif key_states["5"]:
-        skip_beats(controller, 3780, 3898)
-        break
-    elif key_states["6"]:
-        skip_beats(controller, 5420, 5501)
-        break
-
-    time.sleep(0.01)
-
-
-if os.name == "nt":
-    os.system("cls")
-elif os.name == "posix":
-    os.system("clear")
-else:
-    print("\033[2J")
-
-# wave_obj = sa.WaveObject.from_wave_file(filename)
-# play_obj = wave_obj.play()
-playback.play()
-playback.seek(skip_by)
-
-time_start = time.time()
-last_update = time.time()
-prev_pos = 0
-
-while playback.active:
-    # (17.06.21) might have broken, i used a -1 beat offset here to try and sync up everything better
-    # since i originally used 1-indexed beats
-    #
-    # (24.06.21) update chat it didnt break
-
-    # next_beat = (time.time() - time_start - offset) > ((beat - 1) * delay)
-    next_beat = (playback.curr_pos - offset) > ((beat - 1) * delay)
-    need_update = time.time() - (1/30) > last_update
-    # print(pygame.mixer.music.get_pos())
-
-    if next_beat:
-        controller.request_next()
-        canvas.render_all()
-        last_frames.append(time.time())
-        if len(last_frames) > 10:
-            last_frames.pop(0)
-
-        beat += 1
-
-    if need_update:
+    while time.time() - time_menu < 2:
         update_key_states()
 
-        if key_states["p"]:
-            if not paused_this_frame:
-                if playback.paused:
-                    playback.resume()
-                else:
-                    playback.pause()
+        if key_states["1"]:
+            break
+        elif key_states["2"]:
+            skip_beats(controller, 1000, 1081)
+            break
+        elif key_states["3"]:
+            skip_beats(controller, 1770, 1851)
+            controller.events[1849] = (
+                am.Event(1849, am.Event.layer_scene("redraw_ui")),
+            )
+            controller.events[1860] = (
+                am.Event(1860, am.Event.remove_scene("redraw_ui")),
+            )
+            break
+        elif key_states["4"]:
+            skip_beats(controller, 3040, 3133)
+            break
+        elif key_states["5"]:
+            skip_beats(controller, 3780, 3898)
+            break
+        elif key_states["6"]:
+            skip_beats(controller, 5420, 5501)
+            break
 
-                paused_this_frame = True
-        else:
-            paused_this_frame = False
+        time.sleep(0.01)
 
-        if key_states[","]:
-            playback.seek(playback.curr_pos + delay * 3)
+    if os.name == "nt":
+        os.system("cls")
+    elif os.name == "posix":
+        os.system("clear")
+    else:
+        print("\033[2J")
 
-        if key_states["."]:
-            playback.seek(playback.curr_pos + delay * 7)
+    playback.play()
+    playback.seek(skip_by)
 
-        if key_states["/"]:
-            playback.seek(playback.curr_pos + delay * 15)
+    last_update = time.time()
 
-        # else:
-        #     # print("n", ff_this_frame, pygame.mixer.music.get_pos() + prev_pos, prev_pos)
-        #     if ff_this_frame:
-        #         # print("unpausing now")
-        #         ff_this_frame = False
-        #         ffwing.toggle_music()
+    while playback.active:
+        next_beat = (
+            playback.curr_pos - offset
+        ) > ((beat - 1) * delay)
 
-        last_update = time.time()
-if terminal_settings is not None:
-    termios.tcsetattr(
-        sys.stdin,
-        termios.TCSADRAIN,
-        terminal_settings,
-    )
-# Add a final clear at the end to prevent the last frame from sticking around when the program ends.
-if os.name == "nt":
-    os.system("cls")
-elif os.name == "posix":
-    os.system("clear")
-else:
-    print("\033[2J")
+        need_update = time.time() - (1 / 30) > last_update
+
+        if next_beat:
+            controller.request_next()
+            canvas.render_all()
+            last_frames.append(time.time())
+
+            if len(last_frames) > 10:
+                last_frames.pop(0)
+
+            beat += 1
+
+        if need_update:
+            update_key_states()
+
+            if key_states["p"]:
+                if not paused_this_frame:
+                    if playback.paused:
+                        playback.resume()
+                    else:
+                        playback.pause()
+
+                    paused_this_frame = True
+            else:
+                paused_this_frame = False
+
+            if key_states[","]:
+                playback.seek(playback.curr_pos + delay * 3)
+
+            if key_states["."]:
+                playback.seek(playback.curr_pos + delay * 7)
+
+            if key_states["/"]:
+                playback.seek(playback.curr_pos + delay * 15)
+
+            last_update = time.time()
+
+finally:
+    if terminal_settings is not None:
+        termios.tcsetattr(
+            sys.stdin,
+            termios.TCSADRAIN,
+            terminal_settings,
+        )
+
+    if os.name == "nt":
+        os.system("cls")
+    elif os.name == "posix":
+        os.system("clear")
+    else:
+        print("\033[2J")

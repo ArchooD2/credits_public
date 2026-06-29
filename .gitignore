@@ -4,3 +4,5 @@ media/*.WAV
 media/*.mp3
 media/*.MP3
 venv
+*.diff
+.python-version
