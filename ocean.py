@@ -7,7 +7,7 @@ import random
 
 ocean_time = random.randrange(2000)
 alphabet = "abcdefghijklmnopqrstuvwxyz"
-
+OCEAN_SPACE = "\u00a0"
 
 def get_wave_y(xr):
     x = xr / 5
@@ -41,7 +41,7 @@ def get_ocean_slice(xr, glitch):
         elif i > y:
             cont_list.append(".")
         else:
-            cont_list.append(" ")
+            cont_list.append(OCEAN_SPACE)
 
     return cont_list
 
@@ -54,7 +54,7 @@ def mutate_text(txt, glitch):
     ) * glitch
 
     for i, ch in enumerate(chars):
-        if ch in "#. " and random.random() <= mutation_chance:
+        if ch in "#." + OCEAN_SPACE and random.random() <= mutation_chance:
             chars[i] = get_random_letter()
 
     return "".join(chars)

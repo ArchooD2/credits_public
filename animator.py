@@ -36,12 +36,12 @@ class SceneManager(DataStoringObject):
 
     def start_scene(self, scene, at=0):
         new_scene = self.scenes[scene]
-    
+
         if self.active_scenes:
             self.active_scenes[0] = new_scene
         else:
             self.active_scenes.append(new_scene)
-    
+
         new_scene.start(at)
 
     def add_scene(self, scene, at=0):

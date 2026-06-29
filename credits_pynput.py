@@ -362,9 +362,10 @@ def on_release(key):
     except AttributeError:
         pass
 
+use_terminal_input = is_wsl() and sys.stdin.isatty()
 terminal_settings = None
 
-if is_wsl() and sys.stdin.isatty():
+if use_terminal_input:
     terminal_settings = termios.tcgetattr(sys.stdin)
     tty.setcbreak(sys.stdin.fileno())
 else:
@@ -376,7 +377,7 @@ else:
 
 
 def update_key_states():
-    if not is_wsl() and sys.stdin.isatty():
+    if not use_terminal_input:
         return
 
     for key in key_states:
