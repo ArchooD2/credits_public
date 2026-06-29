@@ -5,8 +5,18 @@
 import math
 import random
 
-ocean_time = math.floor(random.random() * 2000)
+ocean_time = random.randrange(2000)
 alphabet = "abcdefghijklmnopqrstuvwxyz"
+
+
+def get_wave_y(xr):
+    x = xr / 5
+    c = math.cos(0.2 * x) + math.sin(0.3 * x) * math.sin(0.23 * x)
+    return -math.floor(2 * c * math.sin(x)) + 3
+
+
+def get_random_letter():
+    return random.choice(alphabet)
 
 
 def init_populate_ocean():
@@ -20,67 +30,44 @@ def init_populate_ocean():
 
 
 def get_ocean_slice(xr, glitch):
-    x = xr / 5
-    c = math.cos(0.2 * x) + math.sin(0.3 * x) * math.sin(0.23 * x)
-    y = -math.floor(2 * c * math.sin(x)) + 3
-
-    # Returns a list of chars which can then be populated into the ocean.
+    y = get_wave_y(xr)
     cont_list = []
+
     for i in range(10):
         if random.random() <= 0.002 * glitch:
-            cont_list.append(alphabet[math.floor(random.random() * len(alphabet))])
-
+            cont_list.append(get_random_letter())
+        elif i == y:
+            cont_list.append("#")
+        elif i > y:
+            cont_list.append(".")
         else:
-            if i == y:
-                cont_list.append("#")
-            elif i > y:
-                cont_list.append(".")
-            else:
-                cont_list.append(" ")
+            cont_list.append(" ")
 
     return cont_list
 
 
 def mutate_text(txt, glitch):
-    for i in range(len(txt)):
-        ch = txt[i]
-        if ch in "#. " and random.random() <= (0.0002 + ((ocean_time % 1200) / 1200000)) * glitch:
-            txt = txt[:i] + alphabet[math.floor(random.random() * len(alphabet))] + txt[i + 1:]
+    chars = list(txt)
 
-    return txt
+    mutation_chance = (
+        0.0002 + (ocean_time % 1200) / 1_200_000
+    ) * glitch
+
+    for i, ch in enumerate(chars):
+        if ch in "#. " and random.random() <= mutation_chance:
+            chars[i] = get_random_letter()
+
+    return "".join(chars)
 
 
 def get_ocean_slices(x1, x2):
-    cont_list = [
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        ""
-    ]
+    cont_list = ["" for _ in range(10)]
 
     for xr in range(x1, x2):
-        x = xr / 5
-        c = math.cos(0.2 * x) + math.sin(0.3 * x) * math.sin(0.23 * x)
-        y = -math.floor(2 * c * math.sin(x)) + 3
+        ocean_slice = get_ocean_slice(xr, 1)
 
-        # Returns a list of chars which can then be populated into the ocean.
-        for i in range(10):
-            if random.random() <= 0.002:
-                cont_list[i] += alphabet[math.floor(random.random() * len(alphabet))]
-
-            else:
-                if i == y:
-                    cont_list[i] += "#"
-                elif i > y:
-                    cont_list[i] += "."
-                else:
-                    cont_list[i] += " "
+        for i, char in enumerate(ocean_slice):
+            cont_list[i] += char
 
     return cont_list
 
