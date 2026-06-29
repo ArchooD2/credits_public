@@ -128,36 +128,71 @@ def fuck_up_text(string, chance, also_ignore=""):
 
 def debug_info(c, g, b, frames):
     c.set_string(
-        0, Vector2(32, 1), "{:4} g | {:4} l".format(g.parent.cur_beat, g.parent.active_scene[0].internal_beat), Style.BRIGHT + Fore.YELLOW
-    ),
-    counted_scenes = 0
-    for index, scene in enumerate(filter(lambda s: s.name != "debug_counter", g.parent.active_scene)):
-        c.set_string(
-            0, Vector2(32, index + 2), "{:^17}".format(
-                scene.name + " ({})".format(len(list(filter(lambda g: g.start_beat <= b, scene.generators))))
-            ), Style.NORMAL + Fore.GREEN
+        0,
+        Vector2(32, 1),
+        "{:4} g | {:4} l".format(
+            g.parent.cur_beat,
+            g.parent.active_scenes[0].internal_beat,
         ),
+        Style.BRIGHT + Fore.YELLOW,
+    )
+
+    counted_scenes = 0
+
+    for index, scene in enumerate(
+        filter(
+            lambda scene: scene.name != "debug_counter",
+            g.parent.active_scenes,
+        )
+    ):
+        active_generators = len(
+            [
+                generator
+                for generator in scene.generators
+                if generator.start_beat <= b
+            ]
+        )
+
+        c.set_string(
+            0,
+            Vector2(32, index + 2),
+            "{:^17}".format(f"{scene.name} ({active_generators})"),
+            Style.NORMAL + Fore.GREEN,
+        )
 
         counted_scenes += 1
 
-    for index2 in range(counted_scenes, 6):
+    for index in range(counted_scenes, 6):
         c.set_string(
-            0, Vector2(32, index2 + 2), "                 ", Style.NORMAL + Fore.GREEN
-        ),
+            0,
+            Vector2(32, index + 2),
+            " " * 17,
+            Style.NORMAL + Fore.GREEN,
+        )
 
     c.set_string(
-        0, Vector2(32, 8), "  {:4} e/s".format(c.edits_this_frame), Style.BRIGHT + Fore.YELLOW
-    ),
+        0,
+        Vector2(32, 8),
+        "  {:4} e/s".format(c.edits_this_frame),
+        Style.BRIGHT + Fore.YELLOW,
+    )
 
-    avg_differences = sum(frames[i] - frames[i - 1] for i in range(len(frames) - 1, 0, -1))
+    avg_differences = sum(
+        frames[i] - frames[i - 1]
+        for i in range(len(frames) - 1, 0, -1)
+    )
+
     if avg_differences:
         avg_differences /= 10
     else:
         avg_differences = 60
 
     c.set_string(
-        0, Vector2(32, 9), " {:6} fps".format(round(1 / avg_differences, 1)), Style.BRIGHT + Fore.YELLOW
-    ),
+        0,
+        Vector2(32, 9),
+        " {:6} fps".format(round(1 / avg_differences, 1)),
+        Style.BRIGHT + Fore.YELLOW,
+    )
 
     cols = (
         Fore.BLACK,
@@ -172,12 +207,16 @@ def debug_info(c, g, b, frames):
 
     styles = (
         Style.NORMAL,
-        Style.BRIGHT
+        Style.BRIGHT,
     )
+
     for index in range(16):
         c.set_char(
-            0, Vector2(32 + (index % 8), 11 + (index // 8)), "##", cols[index % 8] + styles[index // 8]
-        ),
+            0,
+            Vector2(32 + (index % 8), 11 + (index // 8)),
+            "##",
+            cols[index % 8] + styles[index // 8],
+        )
 
 
 def clear(c, layer):

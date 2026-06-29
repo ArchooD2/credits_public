@@ -2,16 +2,24 @@ from animation_functions import debug_info
 from CLIRender.classes import enable_ansi
 from colorama import Fore, Style
 
-from pynput import keyboard
-import time
-import os
-import random
 from just_playback import Playback
 
 from animation_scenes import all_scenes, canvas
 from string_defs import data_strings
 
 import animator as am
+import os
+import random
+import select
+import sys
+import time
+
+from pynput import keyboard
+
+if os.name != "nt":
+    import termios
+    import tty
+
 
 enable_ansi()
 # canvas.render_blank()
@@ -332,6 +340,14 @@ key_states = {
     '/': False
 }
 
+def is_wsl():
+    try:
+        with open("/proc/version", "r") as version_file:
+            return "microsoft" in version_file.read().lower()
+    except OSError:
+        return False
+
+
 def on_press(key):
     try:
         if key.char in key_states:
@@ -346,35 +362,63 @@ def on_release(key):
     except AttributeError:
         pass
 
-listener = keyboard.Listener(on_press=on_press, on_release=on_release)
-listener.start()
+terminal_settings = None
+
+if is_wsl() and sys.stdin.isatty():
+    terminal_settings = termios.tcgetattr(sys.stdin)
+    tty.setcbreak(sys.stdin.fileno())
+else:
+    listener = keyboard.Listener(
+        on_press=on_press,
+        on_release=on_release,
+    )
+    listener.start()
+
+
+def update_key_states():
+    if not is_wsl() and sys.stdin.isatty():
+        return
+
+    for key in key_states:
+        key_states[key] = False
+
+    readable, _, _ = select.select([sys.stdin], [], [], 0)
+
+    if readable:
+        key = sys.stdin.read(1)
+
+        if key in key_states:
+            key_states[key] = True
+
+
 
 time_menu = time.time()
-while time.time() - 2 < time_menu:
-    if key_states['1']:
-        time_menu = 99999999999999999999
+
+while time.time() - time_menu < 2:
+    update_key_states()
+
+    if key_states["1"]:
         break
-    elif key_states['2']:
+    elif key_states["2"]:
         skip_beats(controller, 1000, 1081)
-        time_menu = 99999999999999999999
         break
-    elif key_states['3']:
+    elif key_states["3"]:
         skip_beats(controller, 1770, 1851)
-        controller.events[1849] = am.Event(1849, am.Event.layer_scene("redraw_ui")),
-        controller.events[1860] = am.Event(1860, am.Event.remove_scene("redraw_ui")),
-        time_menu = 99999999999999999999
+        controller.events[1849] = (
+            am.Event(1849, am.Event.layer_scene("redraw_ui")),
+        )
+        controller.events[1860] = (
+            am.Event(1860, am.Event.remove_scene("redraw_ui")),
+        )
         break
-    elif key_states['4']:
+    elif key_states["4"]:
         skip_beats(controller, 3040, 3133)
-        time_menu = 99999999999999999999
         break
-    elif key_states['5']:
+    elif key_states["5"]:
         skip_beats(controller, 3780, 3898)
-        time_menu = 99999999999999999999
         break
-    elif key_states['6']:
+    elif key_states["6"]:
         skip_beats(controller, 5420, 5501)
-        time_menu = 99999999999999999999
         break
 
     time.sleep(0.01)
@@ -417,34 +461,28 @@ while playback.active:
         beat += 1
 
     if need_update:
-        if key_states['p']:
+        update_key_states()
+
+        if key_states["p"]:
             if not paused_this_frame:
                 if playback.paused:
                     playback.resume()
                 else:
                     playback.pause()
-    
+
                 paused_this_frame = True
         else:
             paused_this_frame = False
-    
-        if key_states[',']:
-            if not ff_this_frame:
-                ff_this_frame = True
-            else:
-                playback.seek(playback.curr_pos + delay * 3)
-    
-        if key_states['.']:
-            if not ff_this_frame:
-                ff_this_frame = True
-            else:
-                playback.seek(playback.curr_pos + delay * 7)
-    
-        if key_states['/']:
-            if not ff_this_frame:
-                ff_this_frame = True
-            else:
-                playback.seek(playback.curr_pos + delay * 15)
+
+        if key_states[","]:
+            playback.seek(playback.curr_pos + delay * 3)
+
+        if key_states["."]:
+            playback.seek(playback.curr_pos + delay * 7)
+
+        if key_states["/"]:
+            playback.seek(playback.curr_pos + delay * 15)
+
         # else:
         #     # print("n", ff_this_frame, pygame.mixer.music.get_pos() + prev_pos, prev_pos)
         #     if ff_this_frame:
@@ -453,7 +491,12 @@ while playback.active:
         #         ffwing.toggle_music()
 
         last_update = time.time()
-
+if terminal_settings is not None:
+    termios.tcsetattr(
+        sys.stdin,
+        termios.TCSADRAIN,
+        terminal_settings,
+    )
 # Add a final clear at the end to prevent the last frame from sticking around when the program ends.
 if os.name == "nt":
     os.system("cls")

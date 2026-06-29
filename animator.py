@@ -1,17 +1,21 @@
+from collections import defaultdict
+
 class DataStoringObject:
     def __init__(self):
         self.data = {}
 
-    def set_data(self, *ident):
-        for i in range(0, len(ident), 2):
-            self.data[ident[i]] = ident[i + 1]
+    def set_data(self, *items):
+        if len(items) % 2 != 0:
+            raise ValueError("set_data requires key-value pairs")
 
-    def get_data(self, ident):
-        if ident in self.data:
-            return self.data[ident]
+        for key, value in zip(items[::2], items[1::2]):
+            self.data[key] = value
 
-    def oper_data(self, ident, oper):
-        self.data[ident] = oper(self.data[ident])
+    def get_data(self, ident, default=None):
+        return self.data.get(ident, default)
+
+    def oper_data(self, ident, operation):
+        self.data[ident] = operation(self.data[ident])
 
 
 class SceneManager(DataStoringObject):
@@ -19,53 +23,59 @@ class SceneManager(DataStoringObject):
         super().__init__()
 
         self.scenes = {scene.name: scene for scene in scenes}
-        self.events = {event.beat: [ev for ev in events if ev.beat == event.beat] for event in events}
+
+        self.events = defaultdict(list)
+        for event in events:
+            self.events[event.beat].append(event)
 
         for scene in scenes:
             scene.set_parent(self)
 
-        self.active_scene = []
+        self.active_scenes = []
         self.cur_beat = -1
-        self.data = {}
 
     def start_scene(self, scene, at=0):
-        if len(self.active_scene) == 0:
-            self.active_scene.append(None)
-
-        self.active_scene[0] = self.scenes[scene]
-        self.active_scene[0].start(at)
+        new_scene = self.scenes[scene]
+    
+        if self.active_scenes:
+            self.active_scenes[0] = new_scene
+        else:
+            self.active_scenes.append(new_scene)
+    
+        new_scene.start(at)
 
     def add_scene(self, scene, at=0):
-        self.active_scene.append(self.scenes[scene])
-        self.active_scene[-1].start(at)
+        new_scene = self.scenes[scene]
+        self.active_scenes.append(new_scene)
+        new_scene.start(at)
 
     def remove_scene(self, scene):
-        if self.scenes[scene] in self.active_scene:
-            self.active_scene.remove(self.scenes[scene])
+        if self.scenes[scene] in self.active_scenes:
+            self.active_scenes.remove(self.scenes[scene])
 
     def request_next(self, render=True):
-        for scene in self.active_scene:
+        for scene in self.active_scenes.copy():
             scene.request_frame(render)
 
         self.next_beat()
 
     def next_beat(self):
         self.cur_beat += 1
-        if self.cur_beat in self.events:
-            for event in self.events[self.cur_beat]:
-                event.do(self)
 
-    def set_scene_data(self, scene, *ident):
-        self.scenes[scene].set_data(*ident)
+        for event in self.events.get(self.cur_beat, []):
+            event.do(self)
 
-    def set_generator_data(self, scene, generator, *ident):
-        self.scenes[scene].generators[generator].set_data(*ident)
+    def set_scene_data(self, scene, *items):
+        self.scenes[scene].set_data(*items)
+
+    def set_generator_data(self, scene, generator, *items):
+        self.scenes[scene].generators[generator].set_data(*items)
 
 
 class Event:
-    def __init__(self, beat, do):
+    def __init__(self, beat, action):
         self.beat = beat
-        self.do = do
+        self.do = action
 
     @staticmethod
     def swap_scene(sc, at=0):
@@ -93,7 +103,7 @@ class Scene(DataStoringObject):
     def set_parent(self, parent):
         self.parent = parent
 
-    # Requests a frame. This basically calls the request() and request_clear() functions in every generator.
+    # Requests a frame from every currently active generator.
     def request_frame(self, render=True):
         beat = self.internal_beat
         if render:
@@ -127,7 +137,6 @@ class Generator(DataStoringObject):
         self.parent = None
         self.scene = None
 
-        self.data = {}
         self.start_beat = start_beat
         self.condition = condition
         self.on_create = on_create
